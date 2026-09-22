@@ -40,11 +40,11 @@ graph TD
 
 | Agent | Role | Model | Instructions | Output type | Handoff targets |
 |---|---|---|---|---|---|
-| **Ops Desk** | Entry point, classifier, Admin answerer | `gemini-2.5-flash`, moderate temperature (e.g. 0.4) | Built per-turn from `StudentProfile` (FR-4) | `Ticket` | Assignments, Careers |
-| **Base Specialist** | Not exposed directly; exists only to be cloned | `gemini-2.5-flash`, baseline settings | Generic placeholder, always overridden by clones | `Ticket` | — |
+| **Ops Desk** | Entry point, classifier, Admin answerer | `gemini-3.6-flash`, moderate temperature (e.g. 0.4) | Built per-turn from `StudentProfile` (FR-4) | `Ticket` | Assignments, Careers |
+| **Base Specialist** | Not exposed directly; exists only to be cloned | `gemini-3.6-flash`, baseline settings | Generic placeholder, always overridden by clones | `Ticket` | — |
 | **Assignments Specialist** | Answers assignment/schedule/policy questions | Cloned from Base; low temperature (e.g. 0.1) for factual precision | Cold, factual, cites the exact policy/date returned by tools; never speculates | `Ticket` | none (leaf) |
 | **Careers Specialist** | Answers career-guidance questions | Cloned from Base; higher temperature (e.g. 0.7) | Warmer, encouraging, may offer general advice alongside course-specific facts | `Ticket` | none (leaf) |
-| **Summariser** | Condenses long policy text to ≤3 lines | `gemini-2.5-flash`, low temperature | Single-purpose: compress, never add new claims | plain text (not a `Ticket` — it is a tool, not a conversational endpoint) | — (exposed to Desk as a tool, not a handoff target) |
+| **Summariser** | Condenses long policy text to ≤3 lines | `gemini-3.6-flash`, low temperature | Single-purpose: compress, never add new claims | plain text (not a `Ticket` — it is a tool, not a conversational endpoint) | — (exposed to Desk as a tool, not a handoff target) |
 
 **Design decision — why Assignments/Careers are handoffs and Summariser is a tool.** A handoff
 transfers *authorship* of the reply to the student — appropriate when the specialist's voice and
