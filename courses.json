@@ -1,0 +1,41 @@
+{
+  "courses": [
+    {
+      "id": "agentic-ai-w4",
+      "title": "Agentic AI - weekdays batch 4",
+      "schedule": "Mon-Thu, 7-9pm",
+      "policies": {
+        "late_submission": "48 hours, 20% penalty",
+        "attendance": "Minimum 80% to sit the final assessment"
+      },
+      "assignments": [
+        {
+          "id": "a3",
+          "title": "First coded agent",
+          "due": "2026-10-02"
+        },
+        {
+          "id": "a4",
+          "title": "Multi-agent handoff demo",
+          "due": "2026-10-16"
+        }
+      ]
+    },
+    {
+      "id": "web-dev-we2",
+      "title": "Web Development - weekend batch 2",
+      "schedule": "Sat-Sun, 10am-2pm",
+      "policies": {
+        "late_submission": "24 hours, 10% penalty",
+        "resubmission": "One resubmission allowed per assignment before the module closes"
+      },
+      "assignments": [
+        {
+          "id": "w1",
+          "title": "Responsive portfolio page",
+          "due": "2026-10-05"
+        }
+      ]
+    }
+  ]
+}

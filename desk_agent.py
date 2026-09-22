@@ -6,6 +6,7 @@ Module is deliberately not named `agents.py` — that would shadow the SDK packa
 from agents import Agent, ModelSettings, OpenAIChatCompletionsModel
 
 from config import MODEL_NAME, gemini_client
+from tools import get_assignment, get_course, list_courses
 
 # TODO(T108/FR-4): replace with the per-turn builder composed from StudentProfile.
 PLACEHOLDER_INSTRUCTIONS = (
@@ -17,6 +18,7 @@ PLACEHOLDER_INSTRUCTIONS = (
 desk_agent = Agent(
     name="Ops Desk",
     instructions=PLACEHOLDER_INSTRUCTIONS,
+    tools=[list_courses, get_course, get_assignment],
     # Art. I.2 — the Gemini client lives in this agent's own model configuration.
     model=OpenAIChatCompletionsModel(
         model=MODEL_NAME,
