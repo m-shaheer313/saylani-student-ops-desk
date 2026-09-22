@@ -1,30 +1,29 @@
 """Terminal entry point for the Saylani Student Ops Desk (FR-1)."""
 
 import asyncio
+import sys
 
 from agents import Runner
 from agents.exceptions import MaxTurnsExceeded
 
-from config import MAX_TURNS
+from config import MAX_TURNS, gemini_client
 from desk_agent import desk_agent
 
 EXIT_WORDS = {"exit", "quit"}
 
 
-async def main() -> None:
-    print("Saylani Student Ops Desk — type 'exit' to leave.\n")
-
+async def _chat_loop() -> None:
     while True:
         try:
             message = input("You: ").strip()
         except (EOFError, KeyboardInterrupt):
             print()
-            break
+            return
 
         if not message:
             continue
         if message.lower() in EXIT_WORDS:
-            break
+            return
 
         try:
             result = await Runner.run(
@@ -46,8 +45,22 @@ async def main() -> None:
 
         print(f"Desk: {reply}\n")
 
+
+async def main() -> None:
+    print("Saylani Student Ops Desk — type 'exit' to leave.\n")
+    try:
+        await _chat_loop()
+    finally:
+        # Close the HTTP connection pool so nothing is left pending when the
+        # event loop tears down.
+        await gemini_client.close()
     print("Goodbye.")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except (KeyboardInterrupt, asyncio.CancelledError):
+        # Art. VIII.2 — a mid-run Ctrl+C exits quietly, never as a traceback.
+        print("\nGoodbye.")
+        sys.exit(0)
