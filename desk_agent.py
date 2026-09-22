@@ -8,6 +8,7 @@ from agents import Agent, ModelSettings, OpenAIChatCompletionsModel, RunContextW
 from config import MODEL_NAME, gemini_client
 from student_profile import StudentProfile
 from specialists import assignments_specialist, careers_specialist
+from summariser import summarise_policy
 from tools import (
     get_account_status,
     get_course,
@@ -79,7 +80,8 @@ desk_agent: Agent[StudentProfile] = Agent(
     # FR-4 — a callable, so it is re-resolved from the context on every run.
     instructions=build_desk_instructions,
     # get_assignment lives on the Assignments Specialist only (plan.md §3).
-    tools=[list_courses, get_course, get_account_status],
+    tools=[list_courses, get_course, get_account_status, summarise_policy],
+    # Summariser is deliberately absent — it is a tool, never a handoff target.
     handoffs=[assignments_specialist, careers_specialist],
     # Art. I.2 — the Gemini client lives in this agent's own model configuration.
     model=OpenAIChatCompletionsModel(
