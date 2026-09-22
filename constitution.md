@@ -35,7 +35,7 @@ as in RFC 2119.
 
 **Amendment history:** `gemini-2.5-flash` was replaced with `gemini-3.6-flash` on 2026-09-22 after
 Google blocked the former for this project's API key ahead of its stated retirement (not before
-2026-10-16). See commit AMENDMENT_HASH.
+2026-10-16). See commit 3afd519.
 
 ## Article II — Secrets Management
 
