@@ -37,6 +37,7 @@ TRANSIENT_RETRIES = 3
 TRANSIENT_BACKOFF_SECONDS = 70
 
 SUMMARISER_TOOL = "summarise_policy"
+CLOSE_TICKET_TOOL = "close_ticket"
 
 # A policy long enough that summarising it is a real compression, not a no-op.
 LONG_POLICY = """Submission window: assignments are accepted from the moment they are posted until 11:59pm on the stated due date, in the Asia/Karachi timezone only.
@@ -66,6 +67,32 @@ def _tool_outputs(result, tool_name: str) -> list[str]:
         if call_id in call_ids:
             outputs.append(str(item.output))
     return outputs
+
+
+def _tool_call_names(result) -> list[str]:
+    """Every tool the model invoked in this run, in order."""
+    return [
+        name
+        for item in result.new_items
+        if isinstance(item, ToolCallItem)
+        and (name := getattr(item.raw_item, "name", None)) is not None
+    ]
+
+
+def _check_close_ticket(case: str, result) -> str | None:
+    """FR-9b — the run must have ended through close_ticket, not plain output.
+
+    Deliberately independent of the routing check: a dormant stopping rule is a
+    close_ticket defect, not a handoff defect, and must be reported as such.
+    """
+    names = _tool_call_names(result)
+    if CLOSE_TICKET_TOOL in names:
+        return None
+    return (
+        f"{case}: close_ticket was never called — the FR-9b stopping rule is "
+        f"dormant; the model produced its Ticket via plain structured output "
+        f"instead (tool calls seen: {names or 'none'})"
+    )
 
 
 def _handoff_names(result) -> list[str]:
@@ -146,27 +173,32 @@ async def main() -> int:
 
     failures: list[str] = []
 
+    # (label, message, primary check, does this case end in a Ticket?)
     cases = [
         (
             "1 assignment-only",
             "When is assignment a3 due?",
             lambda c, r: _check_agent(c, r, "Assignments Specialist"),
+            True,
         ),
         (
             "2 career-only",
             "Should I focus on Python or Go for job hunting?",
             lambda c, r: _check_agent(c, r, "Careers Specialist"),
+            True,
         ),
         (
             "3 admin-only",
             "What courses do you offer?",
             lambda c, r: _check_agent(c, r, "Ops Desk"),
+            True,
         ),
         (
             "4 assignment+career tie",
             "Will finishing my assignments actually help me get a job, and is a3 "
             "still open?",
             lambda c, r: _check_agent(c, r, "Assignments Specialist"),
+            True,
         ),
         (
             "5 summariser, long input",
@@ -174,6 +206,7 @@ async def main() -> int:
             "relay the short version to me. Do not hand this off to anyone.\n\n"
             f"{LONG_POLICY}",
             _check_summary,
+            False,
         ),
         (
             "6 summariser, already-short input",
@@ -181,10 +214,11 @@ async def main() -> int:
             "result. Do not hand this off to anyone.\n\n"
             f"{SHORT_POLICY}",
             lambda c, r: _check_summary(c, r, source_text=SHORT_POLICY),
+            False,
         ),
     ]
 
-    for index, (case, message, check) in enumerate(cases):
+    for index, (case, message, check, ends_in_ticket) in enumerate(cases):
         print(f"\n=== {case} ===")
         print(f"  sent   : {message.splitlines()[0][:100]}")
 
@@ -198,26 +232,35 @@ async def main() -> int:
         print(f"  agent  : {result.last_agent.name}")
         handoffs = _handoff_names(result)
         print(f"  handoff: {handoffs if handoffs else 'none'}")
+        print(f"  tools  : {_tool_call_names(result) or 'none'}")
         print(f"  reply  : {str(result.final_output).strip()[:400]}")
 
-        failure = check(case, result)
-        if failure:
-            print(f"  RESULT : FAIL — {failure}")
-            failures.append(failure)
-        else:
-            print("  RESULT : pass")
+        # Two independent verdicts, so a dormant stopping rule never reads as a
+        # routing failure (or vice versa).
+        primary = check(case, result)
+        print(f"  routing: {'pass' if primary is None else f'FAIL — {primary}'}")
+        if primary:
+            failures.append(primary)
+
+        if ends_in_ticket:
+            stopping = _check_close_ticket(case, result)
+            print(
+                f"  closing: {'pass' if stopping is None else f'FAIL — {stopping}'}"
+            )
+            if stopping:
+                failures.append(stopping)
 
         if index < len(cases) - 1:
             await asyncio.sleep(PAUSE_SECONDS)
 
     print("\n" + "=" * 60)
     if failures:
-        print(f"FAILED ({len(failures)} of {len(cases)} cases):")
+        print(f"FAILED ({len(failures)} assertion(s) across {len(cases)} cases):")
         for failure in failures:
             print(f"  - {failure}")
         return 1
 
-    print(f"PASSED — all {len(cases)} cases met their expectation.")
+    print(f"PASSED — all {len(cases)} cases met every expectation.")
     return 0
 
 
