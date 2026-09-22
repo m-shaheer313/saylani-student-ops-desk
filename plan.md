@@ -66,7 +66,7 @@ judgment call to call.
 | `get_assignment` | Assignments | `course_id: str`, `assignment_id: str` | no | title, due date | Returns a not-found string if either id is absent |
 | `get_account_status` | Desk | *(none)* | **yes** — reads `context.tier`, `context.open_tickets` | short status string | Cannot fail under normal operation; a missing context is a programmer error caught by the type system, not a runtime path |
 | `summarise_policy` (via Summariser-as-tool) | Desk | `text: str` | no | ≤3-line summary | Returns `"nothing to summarize"` for empty/whitespace input |
-| `request_priority_review` | Assignments, Careers | short justification string | **yes** — only included in the tool list when `context.tier == "scholarship"` | acknowledgement string | Not present in the tool list at all for `"regular"` tier — this is a list-construction decision, not a runtime refusal |
+| `request_priority_review` | Desk, Assignments, Careers | short justification string | **yes** — only included in the tool list when `context.tier == "scholarship"` | acknowledgement string | Not present in the tool list at all for `"regular"` tier — this is a list-construction decision, not a runtime refusal |
 | `close_ticket` | Desk, Assignments, Careers | the five `Ticket` fields (§ `spec.md` 4.7) | no | the validated `Ticket`; ends the run immediately | Invalid/incomplete fields fail Pydantic validation, surfaced the same way as any other structured-output failure |
 
 `get_account_status` is the capability that satisfies `spec.md` FR-3's acceptance criterion: its
