@@ -6,6 +6,7 @@ import sys
 from agents import Runner
 from agents.exceptions import InputGuardrailTripwireTriggered, MaxTurnsExceeded
 
+from audit import AuditHooks
 from config import MAX_TURNS, gemini_client
 from desk_agent import desk_agent
 from guardrail import CHECK_FAILED_MESSAGE, REFUSAL_MESSAGE, GuardrailCheckFailed
@@ -62,12 +63,16 @@ async def _chat_loop(profile: StudentProfile) -> None:
         if message.lower() in EXIT_WORDS:
             return
 
+        # FR-10 — one audit id per run, so a whole turn groups together.
+        hooks = AuditHooks()
+
         try:
             result = await Runner.run(
                 desk_agent,
                 message,
                 context=profile,  # FR-3 — student data reaches tools only this way.
                 max_turns=MAX_TURNS,  # Art. VI.2
+                hooks=hooks,  # FR-10 — records the run's timeline to audit_log.jsonl
             )
             ticket = result.final_output
             # FR-7 acceptance — checked in code, not eyeballed.
