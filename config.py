@@ -14,7 +14,7 @@ set_tracing_disabled(True)
 load_dotenv()
 
 GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
-MODEL_NAME = "gemini-2.5-flash"
+MODEL_NAME = "gemini-3.6-flash"
 
 # plan.md §8 — bounds the worst case of a malfunctioning loop to 10 model calls.
 MAX_TURNS = 10
