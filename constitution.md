@@ -1,6 +1,6 @@
 # Constitution — Saylani Student Ops Desk
 
-**Version:** 1.0.0
+**Version:** 1.1.0
 **Status:** Ratified
 **Applies to:** All source code, configuration, and documentation produced for this project.
 
@@ -19,7 +19,7 @@ as in RFC 2119.
 
 ## Article I — Model Provider and Configuration
 
-1. The Desk MUST use `gemini-2.5-flash` as its underlying language model, accessed through an
+1. The Desk MUST use `gemini-3.6-flash` as its underlying language model, accessed through an
    OpenAI-compatible client pointed at the Gemini API endpoint.
 2. The model client MUST be configured at the **agent level** — i.e. passed into each `Agent`
    definition's own model/client configuration.
@@ -32,6 +32,10 @@ as in RFC 2119.
 5. Every agent definition MUST declare its own model settings (temperature, max tokens, etc.)
    explicitly. An agent MAY inherit settings only from the specific base agent it was cloned from
    (see Article on Cloning in `plan.md`) — silent inheritance from anywhere else is prohibited.
+
+**Amendment history:** `gemini-2.5-flash` was replaced with `gemini-3.6-flash` on 2026-09-22 after
+Google blocked the former for this project's API key ahead of its stated retirement (not before
+2026-10-16). See commit AMENDMENT_HASH.
 
 ## Article II — Secrets Management
 
