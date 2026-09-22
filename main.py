@@ -20,7 +20,7 @@ def build_profile() -> StudentProfile:
     Constructing it here means invalid values fail before any run begins.
     """
     return StudentProfile(
-        name="Ayesha Khan",
+        name="Shahid Khan",
         roll_no="SMIT-2026-0412",
         course_id="agentic-ai-w4",
         tier="regular",
@@ -57,6 +57,8 @@ async def _chat_loop(profile: StudentProfile) -> None:
                 max_turns=MAX_TURNS,  # Art. VI.2
             )
             reply = result.final_output
+            # FR-5 — which agent actually authored the reply the student sees.
+            print(f"[answered by: {result.last_agent.name}]")
         except MaxTurnsExceeded:
             # Art. VI.2 / VIII.2 — graceful message, never a crash.
             reply = (
