@@ -21,14 +21,20 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from agents import Runner  # noqa: E402
 from agents.items import HandoffOutputItem, ToolCallItem, ToolCallOutputItem  # noqa: E402
-from openai import APIError  # noqa: E402
+from openai import APIError, InternalServerError, RateLimitError  # noqa: E402
 
 from config import MAX_TURNS  # noqa: E402
 from desk_agent import desk_agent  # noqa: E402
+from guardrail import GuardrailCheckFailed  # noqa: E402
 from student_profile import StudentProfile  # noqa: E402
 
-# Free-tier requests-per-minute headroom between cases.
-PAUSE_SECONDS = 5
+# Free tier allows 5 requests per minute, and one case costs several (guardrail,
+# Desk, any specialist or tool turn), so cases are spaced generously.
+PAUSE_SECONDS = 75
+
+# The model also returns transient 503s under load; retry rather than fail a case.
+TRANSIENT_RETRIES = 3
+TRANSIENT_BACKOFF_SECONDS = 70
 
 SUMMARISER_TOOL = "summarise_policy"
 
@@ -71,9 +77,21 @@ def _handoff_names(result) -> list[str]:
 
 
 async def _ask(profile: StudentProfile, message: str):
-    return await Runner.run(
-        desk_agent, message, context=profile, max_turns=MAX_TURNS
-    )
+    """Run one turn, retrying only transient rate-limit/overload responses."""
+    for attempt in range(1, TRANSIENT_RETRIES + 1):
+        try:
+            return await Runner.run(
+                desk_agent, message, context=profile, max_turns=MAX_TURNS
+            )
+        except (RateLimitError, InternalServerError, GuardrailCheckFailed) as exc:
+            # GuardrailCheckFailed here means the guardrail's own model call hit
+            # the same transient limit — not a verdict about the message.
+            if attempt == TRANSIENT_RETRIES:
+                raise
+            label = type(exc).__name__
+            print(f"  (transient {label}, waiting {TRANSIENT_BACKOFF_SECONDS}s)")
+            await asyncio.sleep(TRANSIENT_BACKOFF_SECONDS)
+    raise RuntimeError("unreachable")
 
 
 def _check_agent(case: str, result, expected: str) -> str | None:
@@ -172,7 +190,7 @@ async def main() -> int:
 
         try:
             result = await _ask(profile, message)
-        except APIError as exc:
+        except (APIError, GuardrailCheckFailed) as exc:
             print(f"  BLOCKED: could not reach the model — {exc}")
             print("\nNothing was proven; rerun when the model is reachable.")
             return 2
