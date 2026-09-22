@@ -9,6 +9,7 @@ from config import MODEL_NAME, gemini_client
 from student_profile import StudentProfile
 from specialists import assignments_specialist, careers_specialist
 from summariser import summarise_policy
+from ticket import TICKET_INSTRUCTIONS, Ticket
 from tools import (
     get_account_status,
     get_course,
@@ -70,6 +71,7 @@ def build_desk_instructions(
         "For anything you keep, use your tools for any course or account fact — never "
         "guess a date, policy, or id. If a tool reports something is unavailable or "
         "not found, relay that plainly instead of inventing an answer.\n\n"
+        f"{TICKET_INSTRUCTIONS}\n\n"
         f"{tone}"
     )
 
@@ -90,4 +92,5 @@ desk_agent: Agent[StudentProfile] = Agent(
     ),
     # Art. I.5 — declared explicitly, never inherited silently.
     model_settings=ModelSettings(temperature=0.4),
+    output_type=Ticket,
 )

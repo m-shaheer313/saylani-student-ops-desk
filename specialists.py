@@ -12,6 +12,7 @@ from agents import Agent, ModelSettings, OpenAIChatCompletionsModel
 
 from config import MODEL_NAME, gemini_client
 from student_profile import StudentProfile
+from ticket import TICKET_INSTRUCTIONS, Ticket
 from tools import get_assignment, get_course
 
 BASE_PLACEHOLDER_INSTRUCTIONS = (
@@ -29,6 +30,9 @@ base_specialist: Agent[StudentProfile] = Agent(
         openai_client=gemini_client,
     ),
     model_settings=ModelSettings(temperature=0.3),
+    # Identical for both clones, so it is declared once here (plan.md §2) and
+    # inherited — FR-5 asks clones to restate only what differs.
+    output_type=Ticket,
 )
 
 ASSIGNMENTS_INSTRUCTIONS = (
@@ -40,7 +44,8 @@ ASSIGNMENTS_INSTRUCTIONS = (
     "policy with your own opinion about whether it is fair or likely to be enforced.\n\n"
     "If a tool reports that a course, assignment, or the data source itself is not "
     "available, say exactly that and stop. Do not substitute a plausible date or "
-    "policy. No encouragement, no filler — the facts and the next step only."
+    "policy. No encouragement, no filler — the facts and the next step only.\n\n"
+    f"{TICKET_INSTRUCTIONS}"
 )
 
 assignments_specialist = base_specialist.clone(
@@ -64,7 +69,8 @@ CAREERS_INSTRUCTIONS = (
     "Keep the two kinds of claim separate. Anything specific about a Saylani course "
     "must come from your course tool, quoted as the tool returned it; general career "
     "advice is clearly your own suggestion. Never invent a Saylani course, policy, or "
-    "placement statistic."
+    "placement statistic.\n\n"
+    f"{TICKET_INSTRUCTIONS}"
 )
 
 careers_specialist = base_specialist.clone(
