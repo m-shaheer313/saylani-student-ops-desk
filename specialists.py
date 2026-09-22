@@ -8,12 +8,12 @@ Note on `clone()`: it shallow-copies, so an unpassed list attribute is shared wi
 the original. Each clone below is therefore given its own explicit `tools` list.
 """
 
-from agents import Agent, ModelSettings, OpenAIChatCompletionsModel
+from agents import Agent, ModelSettings, OpenAIChatCompletionsModel, StopAtTools
 
 from config import MODEL_NAME, gemini_client
 from student_profile import StudentProfile
 from ticket import TICKET_INSTRUCTIONS, Ticket
-from tools import get_assignment, get_course
+from tools import close_ticket, get_assignment, get_course, request_priority_review
 
 BASE_PLACEHOLDER_INSTRUCTIONS = (
     "You are a Saylani specialist. This placeholder is always overridden by the "
@@ -33,6 +33,9 @@ base_specialist: Agent[StudentProfile] = Agent(
     # Identical for both clones, so it is declared once here (plan.md §2) and
     # inherited — FR-5 asks clones to restate only what differs.
     output_type=Ticket,
+    # FR-9b — close_ticket ends the run; its Ticket becomes the final output.
+    # Scoped to that one tool so ordinary lookups still return to the model.
+    tool_use_behavior=StopAtTools(stop_at_tool_names=["close_ticket"]),
 )
 
 ASSIGNMENTS_INSTRUCTIONS = (
@@ -57,7 +60,9 @@ assignments_specialist = base_specialist.clone(
     instructions=ASSIGNMENTS_INSTRUCTIONS,
     # Low temperature: factual precision over phrasing variety (plan.md §2).
     model_settings=ModelSettings(temperature=0.1),
-    tools=[get_course, get_assignment],
+    # request_priority_review is listed here but only *built into* a run's tool
+    # list when the student is scholarship tier (FR-9a).
+    tools=[get_course, get_assignment, request_priority_review, close_ticket],
 )
 
 CAREERS_INSTRUCTIONS = (
@@ -83,5 +88,5 @@ careers_specialist = base_specialist.clone(
     # Higher temperature: advisory answers benefit from more latitude (plan.md §2).
     model_settings=ModelSettings(temperature=0.7),
     # No get_assignment — career questions never need an assignment lookup.
-    tools=[get_course],
+    tools=[get_course, request_priority_review, close_ticket],
 )

@@ -9,10 +9,12 @@ logged (Art. III.4) so they stay visible as defects to fix.
 import json
 import logging
 from pathlib import Path
+from typing import Literal
 
-from agents import RunContextWrapper, function_tool
+from agents import AgentBase, RunContextWrapper, function_tool
 
 from student_profile import StudentProfile
+from ticket import Ticket
 
 logger = logging.getLogger(__name__)
 
@@ -156,3 +158,42 @@ def get_account_status(ctx: RunContextWrapper[StudentProfile]) -> str:
     # This tool's generated schema therefore has zero parameters.
     profile = ctx.context
     return f"Tier: {profile.tier}. Open tickets: {profile.open_tickets}."
+
+
+PRIORITY_REVIEW_ACK = "Your request has been flagged for priority review."
+
+
+def _is_scholarship(
+    ctx: RunContextWrapper[StudentProfile], agent: AgentBase
+) -> bool:
+    """Whether this run's student is scholarship tier (FR-9a)."""
+    return getattr(ctx.context, "tier", None) == "scholarship"
+
+
+@function_tool(is_enabled=_is_scholarship)
+def request_priority_review(justification: str) -> str:
+    """Flag this student's request for priority review by staff."""
+    # No tier check in the body: for a regular-tier run this tool is never built
+    # into the run's tool list, so the model is never told it exists (FR-9a).
+    return PRIORITY_REVIEW_ACK
+
+
+@function_tool
+def close_ticket(
+    category: Literal["assignment", "career", "admin"],
+    summary: str,
+    next_step: str,
+    resolved: bool,
+    escalate: bool,
+) -> Ticket:
+    """Close this conversation with a finished ticket. Ends the conversation."""
+    # No try/except by design (FR-9b): invalid fields raise ValidationError and are
+    # handled exactly like FR-7's structured-output failures — reported back to the
+    # model, no special-casing, and no exception reaching the runner.
+    return Ticket(
+        category=category,
+        summary=summary,
+        next_step=next_step,
+        resolved=resolved,
+        escalate=escalate,
+    )

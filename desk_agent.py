@@ -3,7 +3,13 @@
 Module is deliberately not named `agents.py` — that would shadow the SDK package.
 """
 
-from agents import Agent, ModelSettings, OpenAIChatCompletionsModel, RunContextWrapper
+from agents import (
+    Agent,
+    ModelSettings,
+    OpenAIChatCompletionsModel,
+    RunContextWrapper,
+    StopAtTools,
+)
 
 from config import MODEL_NAME, gemini_client
 from student_profile import StudentProfile
@@ -12,10 +18,12 @@ from specialists import assignments_specialist, careers_specialist
 from summariser import summarise_policy
 from ticket import TICKET_INSTRUCTIONS, Ticket
 from tools import (
+    close_ticket,
     get_account_status,
     get_course,
     list_courses,
     lookup_course_title,
+    request_priority_review,
 )
 
 # spec.md §4.4 — inclusive boundary: 3 open tickets already means terse.
@@ -83,7 +91,15 @@ desk_agent: Agent[StudentProfile] = Agent(
     # FR-4 — a callable, so it is re-resolved from the context on every run.
     instructions=build_desk_instructions,
     # get_assignment lives on the Assignments Specialist only (plan.md §3).
-    tools=[list_courses, get_course, get_account_status, summarise_policy],
+    tools=[
+        list_courses,
+        get_course,
+        get_account_status,
+        summarise_policy,
+        # Only built into a scholarship-tier run's tool list (FR-9a).
+        request_priority_review,
+        close_ticket,
+    ],
     # Summariser is deliberately absent — it is a tool, never a handoff target.
     handoffs=[assignments_specialist, careers_specialist],
     # FR-8 — on the Desk only; the specialists are reached through it.
@@ -96,4 +112,6 @@ desk_agent: Agent[StudentProfile] = Agent(
     # Art. I.5 — declared explicitly, never inherited silently.
     model_settings=ModelSettings(temperature=0.4),
     output_type=Ticket,
+    # FR-9b — close_ticket ends the run; its Ticket becomes the final output.
+    tool_use_behavior=StopAtTools(stop_at_tool_names=["close_ticket"]),
 )
