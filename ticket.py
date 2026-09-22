@@ -34,5 +34,10 @@ TICKET_INSTRUCTIONS = (
     "- resolved=false, escalate=false: not fully answered and not escalated either "
     "— for example the student ended the conversation partway through.\n\n"
     "If you could not resolve the request, still produce a Ticket with "
-    "resolved=false. Never end a run with no Ticket at all."
+    "resolved=false. Never end a run with no Ticket at all.\n\n"
+    # FR-9b — makes close_ticket the actual path to a final answer, so the
+    # stopping rule is exercised rather than dormant.
+    "Once you have fully composed your final Ticket for this turn, call "
+    "close_ticket with those exact field values rather than returning the Ticket "
+    "as plain structured output."
 )
