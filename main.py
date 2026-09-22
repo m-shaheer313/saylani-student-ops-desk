@@ -4,10 +4,11 @@ import asyncio
 import sys
 
 from agents import RunContextWrapper, Runner
-from agents.exceptions import MaxTurnsExceeded
+from agents.exceptions import InputGuardrailTripwireTriggered, MaxTurnsExceeded
 
 from config import MAX_TURNS, gemini_client
 from desk_agent import build_desk_instructions, desk_agent
+from guardrail import CHECK_FAILED_MESSAGE, REFUSAL_MESSAGE, GuardrailCheckFailed
 from student_profile import StudentProfile
 from ticket import Ticket
 
@@ -84,6 +85,18 @@ async def _chat_loop(profile: StudentProfile) -> None:
             # FR-5 — which agent actually authored the reply the student sees.
             print(f"[answered by: {result.last_agent.name}]")
             print_ticket(ticket)
+        except InputGuardrailTripwireTriggered as exc:
+            # FR-8 — the single place the tripwire is caught (plan.md §5). No
+            # Ticket exists for this turn: the Desk's model was never invoked.
+            check = exc.guardrail_result.output.output_info
+            reason = getattr(check, "reason", "no bootcamp-related intent")
+            print(f"[refused by guardrail — {reason}]")
+            print(f"Desk: {REFUSAL_MESSAGE}\n")
+        except GuardrailCheckFailed:
+            # spec.md §4.8 edge case — the check itself broke. Fail toward asking
+            # for a rephrase, never toward answering an unchecked message.
+            print("[guardrail could not run — message not passed to the Desk]")
+            print(f"Desk: {CHECK_FAILED_MESSAGE}\n")
         except MaxTurnsExceeded:
             # Art. VI.2 / VIII.2 — graceful message, never a crash.
             print(

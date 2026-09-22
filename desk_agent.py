@@ -7,6 +7,7 @@ from agents import Agent, ModelSettings, OpenAIChatCompletionsModel, RunContextW
 
 from config import MODEL_NAME, gemini_client
 from student_profile import StudentProfile
+from guardrail import on_topic_guardrail
 from specialists import assignments_specialist, careers_specialist
 from summariser import summarise_policy
 from ticket import TICKET_INSTRUCTIONS, Ticket
@@ -85,6 +86,8 @@ desk_agent: Agent[StudentProfile] = Agent(
     tools=[list_courses, get_course, get_account_status, summarise_policy],
     # Summariser is deliberately absent — it is a tool, never a handoff target.
     handoffs=[assignments_specialist, careers_specialist],
+    # FR-8 — on the Desk only; the specialists are reached through it.
+    input_guardrails=[on_topic_guardrail],
     # Art. I.2 — the Gemini client lives in this agent's own model configuration.
     model=OpenAIChatCompletionsModel(
         model=MODEL_NAME,
