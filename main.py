@@ -8,11 +8,27 @@ from agents.exceptions import MaxTurnsExceeded
 
 from config import MAX_TURNS, gemini_client
 from desk_agent import desk_agent
+from student_profile import StudentProfile
 
 EXIT_WORDS = {"exit", "quit"}
 
 
-async def _chat_loop() -> None:
+def build_profile() -> StudentProfile:
+    """The single profile for this terminal session.
+
+    Hardcoded test values for now; FR-12 builds one per Chainlit session instead.
+    Constructing it here means invalid values fail before any run begins.
+    """
+    return StudentProfile(
+        name="Ayesha Khan",
+        roll_no="SMIT-2026-0412",
+        course_id="agentic-ai-w4",
+        tier="regular",
+        open_tickets=1,
+    )
+
+
+async def _chat_loop(profile: StudentProfile) -> None:
     while True:
         try:
             message = input("You: ").strip()
@@ -29,6 +45,7 @@ async def _chat_loop() -> None:
             result = await Runner.run(
                 desk_agent,
                 message,
+                context=profile,  # FR-3 — student data reaches tools only this way.
                 max_turns=MAX_TURNS,  # Art. VI.2
             )
             reply = result.final_output
@@ -47,9 +64,10 @@ async def _chat_loop() -> None:
 
 
 async def main() -> None:
+    profile = build_profile()
     print("Saylani Student Ops Desk — type 'exit' to leave.\n")
     try:
-        await _chat_loop()
+        await _chat_loop(profile)
     finally:
         # Close the HTTP connection pool so nothing is left pending when the
         # event loop tears down.

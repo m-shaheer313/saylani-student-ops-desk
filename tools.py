@@ -10,7 +10,9 @@ import json
 import logging
 from pathlib import Path
 
-from agents import function_tool
+from agents import RunContextWrapper, function_tool
+
+from student_profile import StudentProfile
 
 logger = logging.getLogger(__name__)
 
@@ -126,3 +128,12 @@ def get_assignment(course_id: str, assignment_id: str) -> dict | str:
         f"No assignment with id '{assignment_id}' in course '{course_id}'. "
         f"Known assignment ids: {known}"
     )
+
+
+@function_tool
+def get_account_status(ctx: RunContextWrapper[StudentProfile]) -> str:
+    """Get the current student's account tier and how many tickets they have open."""
+    # Art. IV.2 — read from the run context, never from a model-supplied argument.
+    # This tool's generated schema therefore has zero parameters.
+    profile = ctx.context
+    return f"Tier: {profile.tier}. Open tickets: {profile.open_tickets}."
