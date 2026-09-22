@@ -62,6 +62,25 @@ def _find_course(courses: list[dict], course_id: str) -> dict | None:
     return None
 
 
+def lookup_course_title(course_id: str) -> str | None:
+    """Resolve a course id to its title, or None if unknown/unavailable.
+
+    Shares `_load_courses` with the tools below, so it is read fresh too. Used by
+    the Desk's per-turn instruction builder (FR-4), which needs the title without
+    going through a model-callable tool.
+    """
+    courses, error = _load_courses()
+    if error:
+        return None
+
+    course = _find_course(courses, course_id)
+    if course is None:
+        return None
+
+    title = str(course.get("title", "")).strip()
+    return title or None
+
+
 @function_tool
 def list_courses() -> list[dict] | str:
     """List every course the institute currently offers, as id/title pairs."""

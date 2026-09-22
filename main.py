@@ -3,11 +3,11 @@
 import asyncio
 import sys
 
-from agents import Runner
+from agents import RunContextWrapper, Runner
 from agents.exceptions import MaxTurnsExceeded
 
 from config import MAX_TURNS, gemini_client
-from desk_agent import desk_agent
+from desk_agent import build_desk_instructions, desk_agent
 from student_profile import StudentProfile
 
 EXIT_WORDS = {"exit", "quit"}
@@ -40,6 +40,14 @@ async def _chat_loop(profile: StudentProfile) -> None:
             continue
         if message.lower() in EXIT_WORDS:
             return
+
+        # TODO(remove-before-phase-3): debug aid, not part of the spec — shows the
+        # resolved FR-4 instructions before the model is called.
+        print(
+            "\n--- resolved instructions ---\n"
+            f"{build_desk_instructions(RunContextWrapper(profile), desk_agent)}\n"
+            "-----------------------------\n"
+        )
 
         try:
             result = await Runner.run(
