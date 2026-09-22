@@ -8,6 +8,8 @@ import os
 
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
+from agents import set_tracing_disabled
+set_tracing_disabled(True)
 
 load_dotenv()
 
