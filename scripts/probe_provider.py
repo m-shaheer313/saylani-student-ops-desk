@@ -171,8 +171,13 @@ CHECKS = [
 async def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--base-url", required=True)
-    ap.add_argument("--model", required=True)
+    ap.add_argument("--model", help="model id to probe (omit with --list)")
     ap.add_argument("--key", default=os.getenv("PROBE_API_KEY", ""))
+    ap.add_argument(
+        "--list",
+        action="store_true",
+        help="just list the model ids this provider offers, then exit",
+    )
     args = ap.parse_args()
 
     if not args.key:
@@ -180,6 +185,23 @@ async def main() -> int:
         return 1
 
     client = AsyncOpenAI(api_key=args.key, base_url=args.base_url)
+
+    if args.list:
+        try:
+            models = await client.models.list()
+        except Exception as exc:
+            print(f"Could not list models: {type(exc).__name__}: {str(exc)[:200]}")
+            return 1
+        finally:
+            await client.close()
+        for m in sorted(models.data, key=lambda m: m.id):
+            print(f"  {m.id}")
+        return 0
+
+    if not args.model:
+        print("Need --model (or use --list to see what is available).")
+        await client.close()
+        return 1
     print(f"Probing {args.base_url} with model {args.model}\n")
 
     failures = []
@@ -187,7 +209,9 @@ async def main() -> int:
         try:
             ok, detail = await check(client, args.model)
         except Exception as exc:
-            ok, detail = False, f"{type(exc).__name__}: {str(exc)[:120]}"
+            # Provider refusals explain themselves in the message body, so keep
+            # enough of it to be actionable.
+            ok, detail = False, f"{type(exc).__name__}: {str(exc)[:400]}"
 
         print(f"  {'PASS' if ok else 'FAIL'}  {name:20} {detail}")
         if not ok:
