@@ -10,6 +10,7 @@ from audit import AuditHooks
 from config import MAX_TURNS, gemini_client
 from desk_agent import desk_agent
 from guardrail import CHECK_FAILED_MESSAGE, REFUSAL_MESSAGE, GuardrailCheckFailed
+from run_support import run_with_retry
 from student_profile import StudentProfile
 from ticket import Ticket
 
@@ -67,12 +68,14 @@ async def _chat_loop(profile: StudentProfile) -> None:
         hooks = AuditHooks()
 
         try:
-            result = await Runner.run(
-                desk_agent,
-                message,
-                context=profile,  # FR-3 — student data reaches tools only this way.
-                max_turns=MAX_TURNS,  # Art. VI.2
-                hooks=hooks,  # FR-10 — records the run's timeline to audit_log.jsonl
+            result = await run_with_retry(
+                lambda: Runner.run(
+                    desk_agent,
+                    message,
+                    context=profile,  # FR-3 — student data reaches tools only here.
+                    max_turns=MAX_TURNS,  # Art. VI.2
+                    hooks=hooks,  # FR-10 — timeline into audit_log.jsonl
+                )
             )
             ticket = result.final_output
             # FR-7 acceptance — checked in code, not eyeballed.

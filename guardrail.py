@@ -19,6 +19,7 @@ from agents import (
 from pydantic import BaseModel
 
 from config import MODEL_NAME, gemini_client
+from run_support import run_with_retry
 from student_profile import StudentProfile
 
 logger = logging.getLogger(__name__)
@@ -102,11 +103,13 @@ async def on_topic_guardrail(
 ) -> GuardrailFunctionOutput:
     """Trip the wire when a message has no bootcamp-related intent."""
     try:
-        result = await Runner.run(
-            topic_guard_agent,
-            user_input,
-            context=ctx.context,
-            max_turns=GUARDRAIL_MAX_TURNS,
+        result = await run_with_retry(
+            lambda: Runner.run(
+                topic_guard_agent,
+                user_input,
+                context=ctx.context,
+                max_turns=GUARDRAIL_MAX_TURNS,
+            )
         )
         check = result.final_output
     except Exception as exc:
