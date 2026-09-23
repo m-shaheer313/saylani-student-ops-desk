@@ -1,6 +1,7 @@
 """Terminal entry point for the Saylani Student Ops Desk (FR-1)."""
 
 import asyncio
+import logging
 import sys
 
 from agents import RunConfig, Runner
@@ -13,6 +14,8 @@ from guardrail import CHECK_FAILED_MESSAGE, REFUSAL_MESSAGE, GuardrailCheckFaile
 from run_support import run_with_retry
 from student_profile import StudentProfile
 from ticket import Ticket
+
+logger = logging.getLogger(__name__)
 
 EXIT_WORDS = {"exit", "quit"}
 
@@ -109,9 +112,11 @@ async def _chat_loop(profile: StudentProfile) -> None:
                 "Desk: Sorry — that took more steps than I'm allowed. "
                 "Could you rephrase it more simply?\n"
             )
-        except Exception:
+        except Exception as exc:
             # spec.md §4.1 — provider errors at call time are a runtime failure,
-            # reported generically. The student never sees a traceback (Art. VIII.2).
+            # reported generically. The student never sees a traceback (Art. VIII.2),
+            # but the cause is logged so it stays diagnosable (Art. III.4 in spirit).
+            logger.error("Run failed: %s: %s", type(exc).__name__, exc)
             print(
                 "Desk: Sorry — I'm temporarily unable to help. "
                 "Please try again shortly.\n"
@@ -119,6 +124,10 @@ async def _chat_loop(profile: StudentProfile) -> None:
 
 
 async def main() -> None:
+    # Warnings and errors go to the terminal; the student-facing text is printed
+    # separately, so a failure is explained to you without being shown to them.
+    logging.basicConfig(level=logging.WARNING, format="[%(levelname)s] %(message)s")
+
     profile = build_profile()
     print("Saylani Student Ops Desk — type 'exit' to leave.\n")
     try:

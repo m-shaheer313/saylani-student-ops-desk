@@ -1,0 +1,230 @@
+/* Saylani Student Ops Desk — "docket" theme.
+ *
+ * One idea, spent in one place: a desk reply is a docket handed across a
+ * counter. Everything else stays quiet — no gradients, no card shadows, no
+ * hover lifts. Colour carries state rather than decoration: the stub edge
+ * turns red only when a ticket is unresolved or escalated.
+ */
+
+:root {
+  --desk-sans: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --desk-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --desk-mono: ui-monospace, "Cascadia Mono", "Consolas", monospace;
+
+  --stub-edge: hsl(var(--primary));
+  --stub-tint: hsl(149 30% 97%);
+}
+
+.dark {
+  --stub-tint: hsl(158 20% 13%);
+}
+
+/* ---------------------------------------------------------------- shell -- */
+
+body,
+input,
+textarea,
+button {
+  font-family: var(--desk-sans);
+  font-feature-settings: "ss01", "cv05";
+}
+
+/* A single hairline under the header: the edge of the counter. */
+header {
+  border-bottom: 1px solid hsl(var(--border));
+  background: hsl(var(--background));
+}
+
+/* ------------------------------------------------------- desk's replies -- */
+
+/* The reply is set, not typed. Serif, generous leading, comfortable measure. */
+.ai-message .message-content p,
+.ai-message .message-content li {
+  font-family: var(--desk-serif);
+  font-size: 1.02rem;
+  line-height: 1.65;
+  max-width: 68ch;
+  color: hsl(var(--foreground));
+}
+
+.ai-message .message-content strong {
+  font-family: var(--desk-sans);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+/* Author name reads as a nameplate on the counter, not a chat handle. */
+.ai-message .message-content + div,
+.step .font-medium {
+  font-family: var(--desk-sans);
+  letter-spacing: 0.01em;
+}
+
+/* --------------------------------------------------------- the student -- */
+
+/* The student's own words stay in the typing face, right-aligned, tinted. */
+[class*="user-message"],
+.step[data-step-type="user_message"] {
+  font-family: var(--desk-sans);
+}
+
+[class*="user-message"] .message-content p {
+  font-family: var(--desk-sans);
+  line-height: 1.55;
+}
+
+/* ---------------------------------------------------------- the docket -- */
+
+/* The one bold element. Rendered from the markdown table app.py emits, so it
+ * survives Chainlit's internal class names changing. */
+.ai-message .message-content table {
+  width: auto;
+  min-width: 17rem;
+  max-width: 24rem;
+  margin: 1.1rem 0 0.35rem;
+  border-collapse: collapse;
+  border: none;
+  border-left: 2px dashed var(--stub-edge);
+  background: var(--stub-tint);
+  font-family: var(--desk-sans);
+  font-size: 0.86rem;
+  overflow: hidden;
+}
+
+.ai-message .message-content table thead tr,
+.ai-message .message-content table tbody tr {
+  border: none;
+}
+
+/* Header row is the docket number: label left, mono reference right. */
+.ai-message .message-content table thead th {
+  border: none;
+  border-bottom: 1px solid hsl(var(--border));
+  padding: 0.5rem 0.9rem 0.45rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: hsl(var(--muted-foreground));
+}
+
+.ai-message .message-content table thead th:last-child {
+  font-family: var(--desk-mono);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-align: right;
+  color: hsl(var(--primary));
+}
+
+.ai-message .message-content table td {
+  border: none;
+  padding: 0.3rem 0.9rem;
+  vertical-align: baseline;
+}
+
+.ai-message .message-content table td:first-child {
+  width: 7.5rem;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.8rem;
+}
+
+.ai-message .message-content table td:last-child {
+  font-weight: 500;
+  color: hsl(var(--foreground));
+}
+
+.ai-message .message-content table tbody tr:last-child td {
+  padding-bottom: 0.6rem;
+}
+
+/* State, not decoration: an unsettled docket is stamped in red. The marker
+ * character comes from app.py's content, so CSS only colours what is there. */
+.ai-message .message-content table td:last-child:is(.stamp),
+.ai-message .message-content table td em {
+  font-family: var(--desk-sans);
+  font-style: normal;
+  font-weight: 600;
+  color: hsl(var(--destructive));
+}
+
+/* --------------------------------------------------------- composer ----- */
+
+#message-composer {
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  background: hsl(var(--card));
+}
+
+#message-composer:focus-within {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.12);
+}
+
+/* ---------------------------------------------------------- starters ---- */
+
+[class*="starter"] button,
+button[class*="starter"] {
+  font-family: var(--desk-sans);
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  background: hsl(var(--card));
+}
+
+[class*="starter"] button:hover {
+  border-color: hsl(var(--primary));
+  background: var(--stub-tint);
+}
+
+/* ------------------------------------------------------------- misc ----- */
+
+/* Chainlit's own credit stays, quietly. */
+.watermark {
+  opacity: 0.45;
+  font-family: var(--desk-sans);
+  font-size: 0.72rem;
+}
+
+code:not(pre code) {
+  font-family: var(--desk-mono);
+  font-size: 0.85em;
+  background: var(--stub-tint);
+  border: 1px solid hsl(var(--border));
+  border-radius: 3px;
+  padding: 0.05em 0.35em;
+}
+
+blockquote {
+  border-left: 2px solid hsl(var(--primary));
+  padding-left: 0.9rem;
+  font-family: var(--desk-serif);
+  color: hsl(var(--muted-foreground));
+}
+
+/* ------------------------------------------------- quality floor -------- */
+
+:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .ai-message .message-content p {
+    font-size: 1rem;
+  }
+  .ai-message .message-content table {
+    min-width: 0;
+    width: 100%;
+  }
+  .ai-message .message-content table td:first-child {
+    width: 6.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

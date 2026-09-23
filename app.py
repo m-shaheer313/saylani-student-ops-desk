@@ -5,6 +5,8 @@ lives in `cl.user_session`. Nothing is held in a module-level variable, so two
 browser sessions are isolated by construction (spec.md §4.12).
 """
 
+import logging
+
 import chainlit as cl
 from agents import RunConfig, Runner
 from agents.exceptions import InputGuardrailTripwireTriggered, MaxTurnsExceeded
@@ -17,6 +19,8 @@ from run_support import run_with_retry
 from student_profile import StudentProfile
 from ticket import Ticket
 from tools import lookup_course_title
+
+logger = logging.getLogger(__name__)
 
 PROFILE_KEY = "profile"
 HISTORY_KEY = "history"
@@ -168,7 +172,9 @@ async def on_message(message: cl.Message) -> None:
             )
         ).send()
         return
-    except Exception:
+    except Exception as exc:
+        # Student sees a sentence; you see the cause in the server log.
+        logger.error("Run failed: %s: %s", type(exc).__name__, exc)
         await cl.Message(
             content=(
                 "Sorry — I'm temporarily unable to help. Please try again shortly."
