@@ -6,11 +6,11 @@ browser sessions are isolated by construction (spec.md §4.12).
 """
 
 import chainlit as cl
-from agents import Runner
+from agents import RunConfig, Runner
 from agents.exceptions import InputGuardrailTripwireTriggered, MaxTurnsExceeded
 
 from audit import AuditHooks
-from config import MAX_TURNS
+from config import MAX_TURNS, WORKFLOW_NAME
 from desk_agent import desk_agent
 from guardrail import CHECK_FAILED_MESSAGE, REFUSAL_MESSAGE, GuardrailCheckFailed
 from run_support import run_with_retry
@@ -142,6 +142,12 @@ async def on_message(message: cl.Message) -> None:
                 context=profile,
                 max_turns=MAX_TURNS,
                 hooks=hooks,
+                # FR-13 — one trace per turn, filed under the same id as this
+                # turn's audit timeline and the docket shown to the student.
+                run_config=RunConfig(
+                    workflow_name=WORKFLOW_NAME,
+                    group_id=hooks.request_id,
+                ),
             )
         )
     except InputGuardrailTripwireTriggered:

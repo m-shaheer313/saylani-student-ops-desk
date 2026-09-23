@@ -3,11 +3,11 @@
 import asyncio
 import sys
 
-from agents import Runner
+from agents import RunConfig, Runner
 from agents.exceptions import InputGuardrailTripwireTriggered, MaxTurnsExceeded
 
 from audit import AuditHooks
-from config import MAX_TURNS, gemini_client
+from config import MAX_TURNS, WORKFLOW_NAME, gemini_client
 from desk_agent import desk_agent
 from guardrail import CHECK_FAILED_MESSAGE, REFUSAL_MESSAGE, GuardrailCheckFailed
 from run_support import run_with_retry
@@ -75,6 +75,12 @@ async def _chat_loop(profile: StudentProfile) -> None:
                     context=profile,  # FR-3 — student data reaches tools only here.
                     max_turns=MAX_TURNS,  # Art. VI.2
                     hooks=hooks,  # FR-10 — timeline into audit_log.jsonl
+                    # FR-13 — same id as the audit trail, so a trace and its
+                    # audit timeline can be lined up against each other.
+                    run_config=RunConfig(
+                        workflow_name=WORKFLOW_NAME,
+                        group_id=hooks.request_id,
+                    ),
                 )
             )
             ticket = result.final_output
