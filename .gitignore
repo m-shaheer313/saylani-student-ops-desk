@@ -2,3 +2,5 @@
 __pycache__/
 .venv/
 *.jsonl
+# Chainlit regenerates these locale files on startup
+.chainlit/translations/
